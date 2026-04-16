@@ -21,7 +21,7 @@ function App() {
   const [newConfession, setNewConfession] = useState('');
   const [anonymousName, setAnonymousName] = useState('');
   const [loading, setLoading] = useState(true);
-  const [selectedUniversity, setSelectedUniversity] = useState('UT Austin');
+  const [selectedUniversity, setSelectedUniversity] = useState('');
   const [isPremium, setIsPremium] = useState(false);
   const [userVotes, setUserVotes] = useState({});
   
@@ -33,22 +33,30 @@ function App() {
 
   const userId = getUserId();
 
+  // NIGERIAN UNIVERSITIES
   const universities = [
-    { id: 1, name: 'UT Austin' },
-    { id: 2, name: 'NYU' },
-    { id: 3, name: 'UCLA' },
-    { id: 4, name: 'University of Michigan' },
-    { id: 5, name: 'Harvard University' },
-    { id: 6, name: 'Stanford University' },
-    { id: 7, name: 'University of Florida' },
-    { id: 8, name: 'Ohio State University' },
-    { id: 9, name: 'University of Washington' },
-    { id: 10, name: 'Penn State University' }
+    { id: 1, name: 'University of Lagos (UNILAG)', location: 'Lagos' },
+    { id: 2, name: 'University of Ibadan (UI)', location: 'Ibadan' },
+    { id: 3, name: 'Obafemi Awolowo University (OAU)', location: 'Ile-Ife' },
+    { id: 4, name: 'University of Nigeria, Nsukka (UNN)', location: 'Nsukka' },
+    { id: 5, name: 'Ahmadu Bello University (ABU)', location: 'Zaria' },
+    { id: 6, name: 'University of Benin (UNIBEN)', location: 'Benin City' },
+    { id: 7, name: 'Lagos State University (LASU)', location: 'Lagos' },
+    { id: 8, name: 'Covenant University', location: 'Ota' },
+    { id: 9, name: 'Babcock University', location: 'Ilishan-Remo' },
+    { id: 10, name: 'University of Ilorin (UNILORIN)', location: 'Ilorin' },
+    { id: 11, name: 'Federal University of Technology, Minna', location: 'Minna' },
+    { id: 12, name: 'University of Port Harcourt (UNIPORT)', location: 'Port Harcourt' },
+    { id: 13, name: 'Nnamdi Azikiwe University (UNIZIK)', location: 'Awka' },
+    { id: 14, name: 'Bayero University Kano (BUK)', location: 'Kano' },
+    { id: 15, name: 'University of Abuja', location: 'Abuja' }
   ];
 
   useEffect(() => {
+    // Set default university
+    setSelectedUniversity('University of Lagos (UNILAG)');
     loadConfessions();
-    const names = ['Quiet Panda', 'Loud Llama', 'Sleepy Sloth', 'Angry Cat', 'Happy Fox', 'Mysterious Owl', 'Silent Wolf'];
+    const names = ['Quiet Panda', 'Loud Llama', 'Sleepy Sloth', 'Angry Cat', 'Happy Fox', 'Mysterious Owl', 'Silent Wolf', 'Mysterious Stranger', 'Silent Observer'];
     setAnonymousName(names[Math.floor(Math.random() * names.length)]);
   }, []);
 
@@ -62,7 +70,6 @@ function App() {
     if (!selectedUniversity) return;
     setLoading(true);
     
-    // Get confessions
     const { data: confessionData, error: confessionError } = await supabase
       .from('confessions')
       .select('*')
@@ -76,7 +83,6 @@ function App() {
     
     setConfessions(confessionData || []);
     
-    // Get user's votes
     if (confessionData && confessionData.length > 0) {
       const confessionIds = confessionData.map(c => c.id);
       const { data: voteData } = await supabase
@@ -99,15 +105,16 @@ function App() {
 
   async function postConfession() {
     if (!newConfession.trim()) {
-      alert('Please write something');
+      alert('Write something first!');
       return;
     }
 
-    const badWords = ['fuck', 'shit', 'asshole', 'bitch', 'cunt', 'nigger', 'faggot'];
+    // Profanity filter
+    const badWords = ['fuck', 'shit', 'asshole', 'bitch', 'cunt', 'nigger', 'faggot', 'stupid', 'idiot'];
     const lowerContent = newConfession.toLowerCase();
     for (let word of badWords) {
       if (lowerContent.includes(word)) {
-        alert('Please remove inappropriate language.');
+        alert('Please keep it respectful. No hate speech or bullying.');
         return;
       }
     }
@@ -131,16 +138,13 @@ function App() {
   async function vote(confessionId, voteType) {
     const currentVote = userVotes[confessionId];
     
-    // If already voted the same way, remove vote
     if (currentVote === voteType) {
-      // Delete the vote
       await supabase
         .from('votes')
         .delete()
         .eq('confession_id', confessionId)
         .eq('user_id', userId);
       
-      // Update the confession vote counts
       const confession = confessions.find(c => c.id === confessionId);
       if (confession) {
         const update = voteType === 'up' 
@@ -153,14 +157,11 @@ function App() {
           .eq('id', confessionId);
       }
       
-      // Update local state
       const newVotes = { ...userVotes };
       delete newVotes[confessionId];
       setUserVotes(newVotes);
     }
-    // If voting differently than before
     else {
-      // If had a previous vote, remove it first
       if (currentVote) {
         await supabase
           .from('votes')
@@ -169,12 +170,10 @@ function App() {
           .eq('user_id', userId);
       }
       
-      // Add new vote
       await supabase
         .from('votes')
         .insert([{ confession_id: confessionId, user_id: userId, vote_type: voteType }]);
       
-      // Update confession counts
       const confession = confessions.find(c => c.id === confessionId);
       if (confession) {
         let update = {};
@@ -194,16 +193,14 @@ function App() {
           .eq('id', confessionId);
       }
       
-      // Update local state
       setUserVotes({ ...userVotes, [confessionId]: voteType });
     }
     
-    // Reload confessions to show updated counts
     loadConfessions();
   }
 
   async function reportConfession(id) {
-    const reason = prompt('Why are you reporting this confession?\n\n(Example: "Bullying", "Hate speech", "Spam", etc.)');
+    const reason = prompt('Why are you reporting this confession?\n\n(Example: "Bullying", "Hate speech", "Spam", "False info")');
     if (reason && reason.trim()) {
       const { error } = await supabase.from('reports').insert([{ 
         confession_id: id, 
@@ -213,14 +210,12 @@ function App() {
       if (error) {
         alert('Error reporting: ' + error.message);
       } else {
-        alert('Thank you for reporting. Our team will review it.');
+        alert('Thank you for reporting. We will review it.');
       }
     }
   }
 
-  // Admin Functions
   async function adminLogin() {
-    // YOUR PASSWORD IS: myCoolPassword2024
     const correctPassword = 'myCoolPassword2024';
     
     if (adminPassword === correctPassword) {
@@ -243,11 +238,8 @@ function App() {
 
   async function deleteConfession(confessionId, reportId) {
     if (window.confirm('Delete this confession? This cannot be undone.')) {
-      // Delete the confession
       await supabase.from('confessions').delete().eq('id', confessionId);
-      // Delete related reports
       await supabase.from('reports').delete().eq('confession_id', confessionId);
-      // Reload
       await loadReports();
       await loadConfessions();
       alert('Confession deleted.');
@@ -269,7 +261,8 @@ function App() {
 
   return (
     <div style={{ maxWidth: 600, margin: '0 auto', padding: 20, fontFamily: 'Arial, sans-serif' }}>
-      <h1 style={{ textAlign: 'center' }}>🤫 Anonymous Confessions</h1>
+      <h1 style={{ textAlign: 'center' }}>🤫 Naija Anonymous Confessions</h1>
+      <p style={{ textAlign: 'center', color: '#666', fontSize: 14 }}>Speak your mind. No one knows it's you.</p>
       
       <select
         value={selectedUniversity}
@@ -277,7 +270,7 @@ function App() {
         style={{ width: '100%', padding: 10, marginBottom: 20, fontSize: 16, borderRadius: 8 }}
       >
         {universities.map(u => (
-          <option key={u.id} value={u.name}>{u.name}</option>
+          <option key={u.id} value={u.name}>{u.name} ({u.location})</option>
         ))}
       </select>
 
@@ -285,23 +278,23 @@ function App() {
       
       <div style={{ background: '#f5f5f5', padding: 20, borderRadius: 10, marginBottom: 20 }}>
         <textarea
-          placeholder="What's on your mind? (100% anonymous)..."
+          placeholder="What's on your mind? Spill the tea... ☕ (100% anonymous)"
           value={newConfession}
           onChange={(e) => setNewConfession(e.target.value)}
           style={{ width: '100%', height: 100, padding: 10, fontSize: 16, borderRadius: 8, border: '1px solid #ccc', marginBottom: 10 }}
         />
         <button 
           onClick={postConfession}
-          style={{ width: '100%', padding: 12, background: 'black', color: 'white', border: 'none', borderRadius: 8, fontSize: 16, cursor: 'pointer' }}
+          style={{ width: '100%', padding: 12, background: '#008000', color: 'white', border: 'none', borderRadius: 8, fontSize: 16, cursor: 'pointer' }}
         >
           Post Confession
         </button>
       </div>
 
-      {loading && <p style={{ textAlign: 'center' }}>Loading...</p>}
+      {loading && <p style={{ textAlign: 'center' }}>Loading confessions...</p>}
 
       {!loading && confessions.length === 0 && (
-        <p style={{ textAlign: 'center', color: '#999' }}>No confessions yet. Be the first! 👆</p>
+        <p style={{ textAlign: 'center', color: '#999' }}>No confessions yet. Be the first to spill the tea! 👆</p>
       )}
 
       {confessions.map((conf, index) => (
@@ -328,25 +321,15 @@ function App() {
         </div>
       ))}
 
-      {/* KO-FI DONATION SECTION - YOUR LINK IS ACTIVE */}
+      {/* Ko-fi Donation */}
       <div style={{ textAlign: 'center', marginTop: 40, padding: 20, background: '#f9f9f9', borderRadius: 10 }}>
-        <p>❤️ Enjoying the app? Support the creator:</p>
+        <p>❤️ Love the app? Support the creator:</p>
         <a href="https://ko-fi.com/samuel67444" target="_blank" rel="noopener noreferrer">
           <button style={{ padding: '10px 20px', background: '#FF5E5B', color: 'white', border: 'none', borderRadius: 8, fontSize: 16, cursor: 'pointer' }}>
-            ☕ Support on Ko-fi
+            ☕ Ko-fi
           </button>
         </a>
       </div>
-
-      {!isPremium && (
-        <div style={{ textAlign: 'center', marginTop: 20, padding: 20, background: '#e3f2fd', borderRadius: 10 }}>
-          <p>🚀 Upgrade to Premium - $3.99/month</p>
-          <p style={{ fontSize: 14, color: '#666' }}>✓ No ads ✓ Custom name ✓ See who viewed</p>
-          <button style={{ padding: '10px 20px', background: '#4CAF50', color: 'white', border: 'none', borderRadius: 8, fontSize: 16, cursor: 'pointer' }}>
-            Upgrade Now
-          </button>
-        </div>
-      )}
 
       {/* Admin Login Button */}
       <div style={{ textAlign: 'center', marginTop: 20 }}>
@@ -390,7 +373,7 @@ function App() {
                 <button onClick={adminLogin} style={{ padding: '10px 20px', background: '#4CAF50', color: 'white', border: 'none', borderRadius: 5, cursor: 'pointer' }}>
                   Login
                 </button>
-                <p style={{ fontSize: 12, color: '#999', marginTop: 20 }}>Enter your admin password</p>
+                <p style={{ fontSize: 12, color: '#999', marginTop: 20 }}>Enter admin password</p>
               </div>
             ) : (
               <>
