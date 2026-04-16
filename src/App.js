@@ -22,7 +22,6 @@ function App() {
   const [anonymousName, setAnonymousName] = useState('');
   const [loading, setLoading] = useState(true);
   const [selectedUniversity, setSelectedUniversity] = useState('');
-  const [isPremium, setIsPremium] = useState(false);
   const [userVotes, setUserVotes] = useState({});
   
   // Admin panel states
@@ -312,24 +311,8 @@ function App() {
             </button>
             <small style={{ color: '#999' }}>{new Date(conf.created_at).toLocaleString()}</small>
           </div>
-          
-          {!isPremium && (index + 1) % 3 === 0 && (
-            <div style={{ margin: '15px 0 0 0', padding: 10, background: '#f9f9f9', textAlign: 'center', borderRadius: 8 }}>
-              <small style={{ color: '#999' }}>Advertisement</small>
-            </div>
-          )}
         </div>
       ))}
-
-      {/* Ko-fi Donation */}
-      <div style={{ textAlign: 'center', marginTop: 40, padding: 20, background: '#f9f9f9', borderRadius: 10 }}>
-        <p>❤️ Love the app? Support the creator:</p>
-        <a href="https://ko-fi.com/samuel67444" target="_blank" rel="noopener noreferrer">
-          <button style={{ padding: '10px 20px', background: '#FF5E5B', color: 'white', border: 'none', borderRadius: 8, fontSize: 16, cursor: 'pointer' }}>
-            ☕ Ko-fi
-          </button>
-        </a>
-      </div>
 
       {/* Admin Login Button */}
       <div style={{ textAlign: 'center', marginTop: 20 }}>
